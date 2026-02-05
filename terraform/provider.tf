@@ -9,12 +9,12 @@ terraform {
   }
 
   backend "gcs" {
-    bucket = " pdfta-shop-datawarehouse-tf"
-    prefix = "shop-datawarehouse/state"
+    bucket = "pdfta-shop-datawarehouse-tf"
+
   }
 }
 
 provider "google" {
   project = var.gcp_project_id
-  region  = "us-central1"
+  region  = var.gcs_location
 }
