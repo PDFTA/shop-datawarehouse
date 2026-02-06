@@ -2,8 +2,8 @@ name: Build and Deploy to Cloud Run
 
 on:
   push:
-    branches:
-      - main
+    # branches:
+    #   - main
     paths:
       - "src/**"
       - "Dockerfile"
