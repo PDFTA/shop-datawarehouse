@@ -2,8 +2,8 @@ name: Terraform GCS Bucket
 
 on:
   push:
-    branches:
-      - main
+    # branches:
+    #   - main
     paths:
       - "terraform/**"
   pull_request:

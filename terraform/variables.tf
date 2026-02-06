@@ -27,3 +27,34 @@ variable "force_destroy" {
   type        = bool
   default     = false
 }
+
+# Cloud Run variables
+variable "cloud_run_region" {
+  description = "Region for Cloud Run service"
+  type        = string
+  default     = "europe-west2"
+}
+
+variable "cloud_run_image" {
+  description = "Container image for Cloud Run service"
+  type        = string
+  default     = "europe-west2-docker.pkg.dev/PROJECT_ID/shop-datawarehouse/api:latest"
+}
+
+variable "cloud_run_min_instances" {
+  description = "Minimum number of Cloud Run instances"
+  type        = number
+  default     = 0
+}
+
+variable "cloud_run_max_instances" {
+  description = "Maximum number of Cloud Run instances"
+  type        = number
+  default     = 10
+}
+
+variable "cloud_run_allow_public_access" {
+  description = "Allow public access to Cloud Run service"
+  type        = bool
+  default     = false
+}
