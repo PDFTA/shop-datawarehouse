@@ -15,39 +15,7 @@ This directory contains Terraform configuration for managing GCP resources for t
 
 ## Setup
 
-1. Authenticate with GCP:
-   ```bash
-   gcloud auth application-default login
-   ```
-
-2. Create a `terraform.tfvars` file from the example:
-   ```bash
-   cp terraform.tfvars.example terraform.tfvars
-   ```
-
-3. Edit `terraform.tfvars` with your values:
-   ```hcl
-   gcp_project_id    = "your-project-id"
-   gcs_location      = "US"
-   environment       = "dev"
-   enable_versioning = true
-   force_destroy     = false
-   ```
-
-4. Initialize Terraform:
-   ```bash
-   terraform init
-   ```
-
-5. Review the plan:
-   ```bash
-   terraform plan
-   ```
-
-6. Apply the configuration:
-   ```bash
-   terraform apply
-   ```
+Local setup is only for development. All terraform configuration changes should occur using the github actions.
 
 ## GitHub Actions
 
