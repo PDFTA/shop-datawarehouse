@@ -1,0 +1,20 @@
+# Example terraform variables file
+# Copy this to terraform.tfvars and fill in your values
+
+# Required: Your GCP project ID
+gcp_project_id = "your-gcp-project-id"
+
+# GCS bucket configuration
+gcs_location      = "EU"
+enable_versioning = true
+force_destroy     = false
+
+# Environment
+environment = "dev"
+
+# Cloud Run configuration
+cloud_run_region              = "europe-west2"
+cloud_run_image               = "europe-west2-docker.pkg.dev/your-project-id/shop-datawarehouse/api:latest"
+cloud_run_min_instances       = 0
+cloud_run_max_instances       = 10
+cloud_run_allow_public_access = false
