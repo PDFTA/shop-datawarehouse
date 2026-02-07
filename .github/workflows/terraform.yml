@@ -4,27 +4,13 @@ on:
   push:
     # branches:
     #   - main
-<<<<<<< HEAD
   pull_request:
-    branches:
-      - main
-=======
     paths:
       - "terraform/**"
       - "src/**"
       - "Dockerfile"
       - ".dockerignore"
       - "pyproject.toml"
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "terraform/**"
-      - "src/**"
-      - "Dockerfile"
-      - ".dockerignore"
-      - "pyproject.toml"
->>>>>>> e3edbbd7ad4f6e80f7e8df20bbc67873a4b650ae
   workflow_dispatch:
 
 permissions:
@@ -44,7 +30,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2  # Need to compare with previous commit
+          fetch-depth: 2 # Need to compare with previous commit
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -99,7 +85,7 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.9.0
-          terraform_wrapper: false  # Needed for output parsing
+          terraform_wrapper: false # Needed for output parsing
 
       - name: Terraform Format Check
         id: fmt
