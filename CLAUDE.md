@@ -106,14 +106,21 @@ curl "https://your-service.run.app/customers/stats"
 
 ## Deployment
 
-The application uses a Terraform-managed deployment architecture for consistency and reliability.
+The application uses a **unified workflow** that intelligently handles both infrastructure and application deployment.
 
-### GitHub Actions Workflows
+### GitHub Actions Workflow
 
-1. **terraform.yml** - Manages infrastructure (all GCP resources)
-   - Runs on changes to `terraform/**`
-   - Plans on PRs, applies on main branch
-   - Manages: GCS bucket, service accounts, IAM bindings, Artifact Registry, Cloud Run service configuration
+**terraform.yml** - Single workflow for infrastructure and deployment
+- Triggers on changes to `terraform/**` or `src/**` (and Dockerfile, pyproject.toml)
+- Detects what changed (code vs infrastructure)
+- **If code changed:** Builds Docker image, pushes to Artifact Registry, runs Terraform with new image
+- **If only infrastructure changed:** Skips build, runs Terraform to update infrastructure
+- Plans on PRs (with detailed comments), applies on push to main
+- Tests deployment with health checks when code changes
+
+**Architecture:** All Cloud Run configuration (scaling, resources, environment variables, health probes) is managed by Terraform. The workflow only builds/pushes images and triggers Terraform. This ensures a single source of truth and prevents configuration drift.
+
+See `.github/workflows/README.md` for detailed workflow documentation.
 
 ## Project Structure
 
@@ -130,10 +137,9 @@ The application uses a Terraform-managed deployment architecture for consistency
   - `provider.tf`: Terraform and provider configuration
   - `variables.tf`: Variable definitions
   - `outputs.tf`: Output values
-- `.github/workflows/`: CI/CD workflows
-  - `terraform.yml`: Infrastructure management
-  - `deploy-cloud-run.yml`: Application deployment
-  - `README.md`: Workflow documentation
+- `.github/workflows/`: CI/CD workflow
+  - `terraform.yml`: Unified infrastructure and deployment workflow
+  - `README.md`: Comprehensive workflow documentation
 - `Dockerfile`: Container image definition
 - `pyproject.toml`: Python dependencies and project metadata
 

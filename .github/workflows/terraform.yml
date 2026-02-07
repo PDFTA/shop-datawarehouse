@@ -1,4 +1,4 @@
-name: Terraform GCS Bucket
+name: Infrastructure and Deployment
 
 on:
   push:
@@ -6,11 +6,19 @@ on:
     #   - main
     paths:
       - "terraform/**"
+      - "src/**"
+      - "Dockerfile"
+      - ".dockerignore"
+      - "pyproject.toml"
   pull_request:
     branches:
       - main
     paths:
       - "terraform/**"
+      - "src/**"
+      - "Dockerfile"
+      - ".dockerignore"
+      - "pyproject.toml"
   workflow_dispatch:
 
 permissions:
@@ -18,17 +26,19 @@ permissions:
   pull-requests: write
   id-token: write
 
+env:
+  REGION: europe-west2
+
 jobs:
-  terraform:
-    name: Terraform
+  deploy:
+    name: Build and Deploy
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./terraform
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Need to compare with previous commit
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -39,31 +49,81 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Check for code changes
+        id: check_changes
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_SHA="HEAD^"
+          fi
+
+          # Check if code files changed
+          if git diff --name-only $BASE_SHA HEAD | grep -qE '^(src/|Dockerfile|.dockerignore|pyproject.toml)'; then
+            echo "code_changed=true" >> $GITHUB_OUTPUT
+            echo "Code changes detected"
+          else
+            echo "code_changed=false" >> $GITHUB_OUTPUT
+            echo "No code changes detected"
+          fi
+
+      - name: Configure Docker for Artifact Registry
+        if: steps.check_changes.outputs.code_changed == 'true'
+        run: |
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      - name: Build and push Docker image
+        if: steps.check_changes.outputs.code_changed == 'true'
+        id: build_image
+        run: |
+          IMAGE_TAG="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/shop-datawarehouse/api:${{ github.sha }}"
+          IMAGE_LATEST="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/shop-datawarehouse/api:latest"
+
+          echo "Building Docker image..."
+          docker build -t $IMAGE_TAG -t $IMAGE_LATEST .
+
+          echo "Pushing Docker image..."
+          docker push $IMAGE_TAG
+          docker push $IMAGE_LATEST
+
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "✓ Image built and pushed: $IMAGE_TAG"
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.9.0
+          terraform_wrapper: false  # Needed for output parsing
 
       - name: Terraform Format Check
         id: fmt
+        working-directory: ./terraform
         run: terraform fmt -check
         continue-on-error: true
 
       - name: Terraform Init
         id: init
+        working-directory: ./terraform
         run: terraform init
 
       - name: Terraform Validate
         id: validate
+        working-directory: ./terraform
         run: terraform validate -no-color
 
       - name: Terraform Plan
         id: plan
         if: github.event_name == 'pull_request'
-        run: terraform plan -no-color -input=false
+        working-directory: ./terraform
+        run: |
+          if [ "${{ steps.check_changes.outputs.code_changed }}" = "true" ]; then
+            terraform plan -no-color -input=false \
+              -var="cloud_run_image=${{ steps.build_image.outputs.image_tag }}"
+          else
+            terraform plan -no-color -input=false
+          fi
         env:
           TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
-          TF_VAR_gcs_location: "europe-west2"
           TF_VAR_github_repository: ${{ github.repository }}
         continue-on-error: true
 
@@ -75,10 +135,13 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const codeChanged = '${{ steps.check_changes.outputs.code_changed }}' === 'true';
+            const imageInfo = codeChanged ? '\n#### Docker Image 🐳 Built and pushed\n' : '';
+
             const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
             #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
             #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
-            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`${imageInfo}
 
             <details><summary>Show Plan</summary>
 
@@ -103,7 +166,47 @@ jobs:
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform apply -auto-approve -input=false
+        id: apply
+        working-directory: ./terraform
+        run: |
+          if [ "${{ steps.check_changes.outputs.code_changed }}" = "true" ]; then
+            echo "Deploying with new image: ${{ steps.build_image.outputs.image_tag }}"
+            terraform apply -auto-approve -input=false \
+              -var="cloud_run_image=${{ steps.build_image.outputs.image_tag }}"
+          else
+            echo "Applying infrastructure changes only"
+            terraform apply -auto-approve -input=false
+          fi
         env:
           TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
           TF_VAR_github_repository: ${{ github.repository }}
+
+      - name: Get Cloud Run URL
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        id: get_url
+        working-directory: ./terraform
+        run: |
+          SERVICE_URL=$(terraform output -raw cloud_run_url 2>/dev/null || echo "")
+          if [ -n "$SERVICE_URL" ]; then
+            echo "service_url=$SERVICE_URL" >> $GITHUB_OUTPUT
+            echo "Service URL: $SERVICE_URL"
+          fi
+
+      - name: Test deployment
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.check_changes.outputs.code_changed == 'true'
+        run: |
+          SERVICE_URL="${{ steps.get_url.outputs.service_url }}"
+          if [ -n "$SERVICE_URL" ]; then
+            echo "Waiting for service to be ready..."
+            sleep 15
+
+            echo "Testing health endpoint..."
+            if curl -f "$SERVICE_URL/health"; then
+              echo "✓ Health check passed!"
+            else
+              echo "✗ Health check failed!"
+              exit 1
+            fi
+          else
+            echo "⚠ Could not get service URL, skipping health check"
+          fi
