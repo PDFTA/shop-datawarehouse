@@ -1,17 +1,3 @@
-# Service account for Cloud Run
-resource "google_service_account" "cloud_run_sa" {
-  account_id   = "shop-datawarehouse-sa"
-  display_name = "Shop Data Warehouse Cloud Run Service Account"
-  project      = var.gcp_project_id
-}
-
-# Grant the service account access to read from the GCS bucket
-resource "google_storage_bucket_iam_member" "cloud_run_bucket_access" {
-  bucket = google_storage_bucket.pdfta_shop_bucket.name
-  role   = "roles/storage.objectViewer"
-  member = "serviceAccount:${google_service_account.cloud_run_sa.email}"
-}
-
 # Cloud Run service
 resource "google_cloud_run_v2_service" "shop_datawarehouse" {
   name     = "shop-datawarehouse"
@@ -22,7 +8,7 @@ resource "google_cloud_run_v2_service" "shop_datawarehouse" {
     service_account = google_service_account.cloud_run_sa.email
 
     containers {
-      image = var.cloud_run_image
+      image = var.cloud_run_image != "" ? var.cloud_run_image : "${google_artifact_registry_repository.docker_repo.location}-docker.pkg.dev/${var.gcp_project_id}/${google_artifact_registry_repository.docker_repo.repository_id}/api:latest"
 
       ports {
         container_port = 8080
@@ -67,8 +53,8 @@ resource "google_cloud_run_v2_service" "shop_datawarehouse" {
     }
 
     scaling {
-      min_instance_count = var.cloud_run_min_instances
-      max_instance_count = var.cloud_run_max_instances
+      min_instance_count = 0
+      max_instance_count = 1
     }
   }
 
@@ -80,15 +66,4 @@ resource "google_cloud_run_v2_service" "shop_datawarehouse" {
   depends_on = [
     google_storage_bucket_iam_member.cloud_run_bucket_access
   ]
-}
-
-# IAM policy to allow public access (optional - comment out for private access)
-resource "google_cloud_run_v2_service_iam_member" "public_access" {
-  count = var.cloud_run_allow_public_access ? 1 : 0
-
-  name     = google_cloud_run_v2_service.shop_datawarehouse.name
-  location = google_cloud_run_v2_service.shop_datawarehouse.location
-  project  = var.gcp_project_id
-  role     = "roles/run.invoker"
-  member   = "allUsers"
 }

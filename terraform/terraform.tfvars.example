@@ -14,7 +14,8 @@ environment = "dev"
 
 # Cloud Run configuration
 cloud_run_region              = "europe-west2"
-cloud_run_image               = "europe-west2-docker.pkg.dev/your-project-id/shop-datawarehouse/api:latest"
-cloud_run_min_instances       = 0
-cloud_run_max_instances       = 10
+cloud_run_image               = ""  # Will use Artifact Registry if empty
 cloud_run_allow_public_access = false
+
+# GitHub repository for workload identity (format: owner/repo)
+github_repository = "your-github-username/shop-datawarehouse"
