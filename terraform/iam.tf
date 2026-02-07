@@ -37,6 +37,16 @@ resource "google_project_iam_member" "github_actions_service_usage_admin" {
   member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
 }
 
+# Grant Artifact Registry Writer - Push Docker images
+# Note: Editor role does NOT include Artifact Registry permissions, so we need this explicitly
+resource "google_artifact_registry_repository_iam_member" "github_actions_ar_writer" {
+  location   = google_artifact_registry_repository.docker_repo.location
+  project    = var.gcp_project_id
+  repository = google_artifact_registry_repository.docker_repo.name
+  role       = "roles/artifactregistry.writer"
+  member     = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
 # ==============================================================================
 # Public Access IAM Bindings
 # ==============================================================================
