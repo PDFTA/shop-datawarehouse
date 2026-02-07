@@ -68,8 +68,10 @@ See `scripts/README.md` for detailed usage.
 The GitHub Actions workflow requires the following secrets to be configured:
 
 - `GCP_WORKLOAD_IDENTITY_PROVIDER`: Workload Identity Provider for GCP authentication
-- `GCP_SERVICE_ACCOUNT`: Service account email for Terraform operations
+- `GCP_SERVICE_ACCOUNT`: Service account email for Terraform operations (typically `github-actions-sa@PROJECT.iam.gserviceaccount.com`)
 - `GCP_PROJECT_ID`: GCP Project ID where resources will be created
+
+**Note:** The GitHub Actions service account (`github-actions-sa`) has extremely permissive permissions (Editor + IAM Security Admin + Service Usage Admin) to allow deploying any infrastructure via Terraform without manual permission updates.
 
 ### API Endpoints
 

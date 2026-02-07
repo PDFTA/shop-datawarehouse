@@ -63,6 +63,8 @@ curl "http://localhost:8080/customers?filter_column=status&filter_value=active"
 
 ## Deployment
 
+This project uses a **unified workflow** that intelligently handles both infrastructure and application deployment. See [`DEPLOYMENT_ARCHITECTURE.md`](./DEPLOYMENT_ARCHITECTURE.md) for detailed architecture documentation.
+
 ### Infrastructure Setup
 
 1. Configure GCP authentication and GitHub secrets (see `terraform/README.md`)
@@ -76,33 +78,46 @@ curl "http://localhost:8080/customers?filter_column=status&filter_value=active"
 
 ### Application Deployment
 
-Push changes to the `main` branch to trigger automatic deployment:
+Push changes to any branch to trigger the workflow:
 
 ```bash
 git add .
 git commit -m "Deploy application"
-git push origin main
+git push
 ```
 
-The GitHub Actions workflow will:
-1. Build the Docker image
-2. Push to Artifact Registry
-3. Deploy to Cloud Run
-4. Run health checks
+The unified GitHub Actions workflow will:
+1. Detect what changed (code vs infrastructure)
+2. Build Docker image (if code changed)
+3. Push to Artifact Registry (if code changed)
+4. Deploy via Terraform
+5. Run health checks
+
+**Key Feature:** The workflow intelligently skips Docker builds when only infrastructure changes, making deployments faster and more efficient.
 
 ## Project Structure
 
 ```
 shop-datawarehouse/
 ├── src/
-│   └── main.py           # FastAPI application
-├── terraform/            # Infrastructure as Code
-│   ├── main.tf          # GCS bucket
-│   ├── cloud_run.tf     # Cloud Run service
-│   └── ...
-├── .github/workflows/   # CI/CD pipelines
-├── Dockerfile           # Container definition
-└── pyproject.toml       # Python dependencies
+│   └── main.py                      # FastAPI application
+├── terraform/                       # Infrastructure as Code
+│   ├── storage.tf                   # GCS bucket
+│   ├── cloud_run.tf                 # Cloud Run service
+│   ├── service_accounts.tf          # Service account definitions
+│   ├── iam.tf                       # IAM bindings
+│   ├── workload_identity.tf         # Workload Identity Federation
+│   ├── artifact_registry.tf         # Docker image registry
+│   ├── apis.tf                      # Required GCP APIs
+│   └── *.md                         # Documentation
+├── .github/workflows/
+│   ├── terraform.yml                # Unified deployment workflow
+│   └── README.md                    # Workflow documentation
+├── scripts/                         # Local development scripts
+├── Dockerfile                       # Container definition
+├── pyproject.toml                   # Python dependencies
+├── DEPLOYMENT_ARCHITECTURE.md       # Deployment architecture guide
+└── CLAUDE.md                        # Comprehensive project guide
 ```
 
 ## Architecture
@@ -175,6 +190,16 @@ docker run -p 8080:8080 \
   -e GCP_PROJECT_ID=your-project \
   shop-datawarehouse
 ```
+
+## Documentation
+
+- **[DEPLOYMENT_ARCHITECTURE.md](./DEPLOYMENT_ARCHITECTURE.md)** - Detailed explanation of the unified workflow architecture
+- **[CLAUDE.md](./CLAUDE.md)** - Comprehensive project guide for Claude Code
+- **[terraform/STRUCTURE.md](./terraform/STRUCTURE.md)** - Terraform file organization and IAM structure
+- **[terraform/IAM_PERMISSIONS.md](./terraform/IAM_PERMISSIONS.md)** - IAM permissions reference and security documentation
+- **[terraform/README.md](./terraform/README.md)** - Terraform setup and usage guide
+- **[.github/workflows/README.md](./.github/workflows/README.md)** - GitHub Actions workflow documentation
+- **[scripts/README.md](./scripts/README.md)** - Local development scripts documentation
 
 ## License
 
