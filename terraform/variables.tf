@@ -38,23 +38,19 @@ variable "cloud_run_region" {
 variable "cloud_run_image" {
   description = "Container image for Cloud Run service"
   type        = string
-  default     = "europe-west2-docker.pkg.dev/PROJECT_ID/shop-datawarehouse/api:latest"
+  default     = "" # Will be constructed from artifact registry
 }
 
-variable "cloud_run_min_instances" {
-  description = "Minimum number of Cloud Run instances"
-  type        = number
-  default     = 0
-}
-
-variable "cloud_run_max_instances" {
-  description = "Maximum number of Cloud Run instances"
-  type        = number
-  default     = 10
-}
 
 variable "cloud_run_allow_public_access" {
   description = "Allow public access to Cloud Run service"
   type        = bool
   default     = false
+}
+
+# GitHub repository for workload identity
+variable "github_repository" {
+  description = "GitHub repository name (owner/repo) for workload identity binding"
+  type        = string
+  default     = ""
 }
