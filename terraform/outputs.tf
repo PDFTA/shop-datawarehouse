@@ -57,3 +57,4 @@ output "workload_identity_pool" {
   description = "Workload Identity Pool for GitHub Actions"
   value       = google_iam_workload_identity_pool.github_actions_pool.name
 }
+

@@ -1,8 +1,8 @@
 # Cloud Run service
 resource "google_cloud_run_v2_service" "shop_datawarehouse" {
-  name               = "shop-datawarehouse"
-  location           = var.cloud_run_region
-  project            = var.gcp_project_id
+  name                = "shop-datawarehouse"
+  location            = var.cloud_run_region
+  project             = var.gcp_project_id
   deletion_protection = false
 
   template {
