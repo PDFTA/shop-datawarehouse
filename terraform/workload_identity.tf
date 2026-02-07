@@ -3,6 +3,7 @@ resource "google_iam_workload_identity_pool" "github_actions_pool" {
   project                   = var.gcp_project_id
   workload_identity_pool_id = "github-pool"
   display_name              = "GitHub Actions Pool"
+  description               = "Workload Identity Pool for GitHub Actions"
 
   depends_on = [
     google_project_service.iam_api,
