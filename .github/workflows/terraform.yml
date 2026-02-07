@@ -4,21 +4,9 @@ on:
   push:
     # branches:
     #   - main
-    paths:
-      - "terraform/**"
-      - "src/**"
-      - "Dockerfile"
-      - ".dockerignore"
-      - "pyproject.toml"
   pull_request:
     branches:
       - main
-    paths:
-      - "terraform/**"
-      - "src/**"
-      - "Dockerfile"
-      - ".dockerignore"
-      - "pyproject.toml"
   workflow_dispatch:
 
 permissions:
@@ -193,7 +181,7 @@ jobs:
           fi
 
       - name: Test deployment
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.check_changes.outputs.code_changed == 'true'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           SERVICE_URL="${{ steps.get_url.outputs.service_url }}"
           if [ -n "$SERVICE_URL" ]; then

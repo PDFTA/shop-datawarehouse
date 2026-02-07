@@ -111,7 +111,7 @@ The application uses a **unified workflow** that intelligently handles both infr
 ### GitHub Actions Workflow
 
 **terraform.yml** - Single workflow for infrastructure and deployment
-- Triggers on changes to `terraform/**` or `src/**` (and Dockerfile, pyproject.toml)
+- Triggers on **all changes** to any branch (push) or PRs to main
 - Detects what changed (code vs infrastructure)
 - **If code changed:** Builds Docker image, pushes to Artifact Registry, runs Terraform with new image
 - **If only infrastructure changed:** Skips build, runs Terraform to update infrastructure
