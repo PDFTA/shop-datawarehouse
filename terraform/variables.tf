@@ -41,13 +41,23 @@ variable "cloud_run_image" {
   default     = "" # Will be constructed from artifact registry
 }
 
-
 variable "cloud_run_allow_public_access" {
   description = "Allow public access to Cloud Run service"
   type        = bool
   default     = false
 }
 
+variable "cloud_run_min_instances" {
+  description = "Minimum number of Cloud Run instances to keep warm"
+  type        = number
+  default     = 0
+}
+
+variable "cloud_run_max_instances" {
+  description = "Maximum number of Cloud Run instances"
+  type        = number
+  default     = 5
+}
 # GitHub repository for workload identity
 variable "github_repository" {
   description = "GitHub repository name (owner/repo) for workload identity binding"
