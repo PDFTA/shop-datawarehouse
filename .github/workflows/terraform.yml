@@ -64,6 +64,7 @@ jobs:
         env:
           TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
           TF_VAR_gcs_location: "europe-west2"
+          TF_VAR_github_repository: ${{ github.repository }}
         continue-on-error: true
 
       - name: Update Pull Request
@@ -105,3 +106,4 @@ jobs:
         run: terraform apply -auto-approve -input=false
         env:
           TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
+          TF_VAR_github_repository: ${{ github.repository }}

@@ -62,32 +62,6 @@ The `scripts/` directory contains helper scripts for local development:
 
 See `scripts/README.md` for detailed usage.
 
-## Infrastructure Management
-
-This project uses Terraform to manage GCP resources.
-
-### Terraform Commands
-
-```bash
-# Initialize Terraform
-cd terraform
-terraform init
-
-# Format Terraform files
-terraform fmt
-
-# Validate configuration
-terraform validate
-
-# Plan infrastructure changes
-terraform plan
-
-# Apply infrastructure changes
-terraform apply
-
-# Destroy infrastructure
-terraform destroy
-```
 
 ### Required Secrets for GitHub Actions
 
@@ -96,18 +70,6 @@ The GitHub Actions workflow requires the following secrets to be configured:
 - `GCP_WORKLOAD_IDENTITY_PROVIDER`: Workload Identity Provider for GCP authentication
 - `GCP_SERVICE_ACCOUNT`: Service account email for Terraform operations
 - `GCP_PROJECT_ID`: GCP Project ID where resources will be created
-
-### GCS Bucket
-
-The Terraform configuration creates a GCS bucket named `pfdta-shop-bucket` with:
-- Uniform bucket-level access enabled
-- Versioning enabled by default
-- 90-day lifecycle rule for automatic cleanup
-- Labels for environment tracking
-
-## Cloud Run API
-
-The application provides a REST API for querying parquet files from GCS:
 
 ### API Endpoints
 
@@ -144,26 +106,26 @@ curl "https://your-service.run.app/customers/stats"
 
 ## Deployment
 
-The application is automatically deployed to Cloud Run when changes are pushed to the `main` branch.
+The application uses a Terraform-managed deployment architecture for consistency and reliability.
 
 ### GitHub Actions Workflows
 
-1. **terraform.yml** - Manages infrastructure (GCS bucket, Cloud Run service, IAM)
+1. **terraform.yml** - Manages infrastructure (all GCP resources)
    - Runs on changes to `terraform/**`
    - Plans on PRs, applies on main branch
-
-2. **deploy-cloud-run.yml** - Builds and deploys the application
-   - Runs on changes to `src/**`, `Dockerfile`, or `pyproject.toml`
-   - Builds Docker image and pushes to Artifact Registry
-   - Deploys to Cloud Run with automatic rollback on failure
+   - Manages: GCS bucket, service accounts, IAM bindings, Artifact Registry, Cloud Run service configuration
 
 ## Project Structure
 
 - `src/`: Application source code
   - `main.py`: FastAPI application with Polars queries
-- `terraform/`: Infrastructure as Code
-  - `main.tf`: GCS bucket configuration
-  - `cloud_run.tf`: Cloud Run service and IAM
+- `terraform/`: Infrastructure as Code (see `STRUCTURE.md` for details)
+  - `storage.tf`: GCS bucket configuration
+  - `artifact_registry.tf`: Docker image registry
+  - `cloud_run.tf`: Cloud Run service configuration
+  - `service_accounts.tf`: Service account definitions
+  - `iam.tf`: IAM bindings organized by service account
+  - `workload_identity.tf`: Workload Identity Federation for GitHub Actions
   - `apis.tf`: Required GCP APIs
   - `provider.tf`: Terraform and provider configuration
   - `variables.tf`: Variable definitions
@@ -171,6 +133,7 @@ The application is automatically deployed to Cloud Run when changes are pushed t
 - `.github/workflows/`: CI/CD workflows
   - `terraform.yml`: Infrastructure management
   - `deploy-cloud-run.yml`: Application deployment
+  - `README.md`: Workflow documentation
 - `Dockerfile`: Container image definition
 - `pyproject.toml`: Python dependencies and project metadata
 
