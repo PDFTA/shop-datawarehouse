@@ -29,48 +29,51 @@ The `.github/workflows/terraform.yml` workflow automates Terraform operations:
 Configure these secrets in your GitHub repository:
 
 - `GCP_WORKLOAD_IDENTITY_PROVIDER`: Your Workload Identity Provider resource name
-- `GCP_SERVICE_ACCOUNT`: Service account email with necessary permissions
+- `GCP_SERVICE_ACCOUNT`: Service account email (typically `github-actions-sa@PROJECT.iam.gserviceaccount.com`)
 - `GCP_PROJECT_ID`: Your GCP project ID
+
+### Service Account Permissions
+
+The `github-actions-sa` service account has extremely permissive permissions to deploy any infrastructure:
+
+- **roles/editor** - Create, modify, and delete most GCP resources
+- **roles/iam.securityAdmin** - Manage service accounts, IAM policies, and roles
+- **roles/serviceusage.serviceUsageAdmin** - Enable and disable APIs
+
+These broad permissions allow Terraform to manage any infrastructure without requiring manual permission updates for each new resource type.
 
 ### Setting up Workload Identity Federation
 
-1. Create a Workload Identity Pool:
-   ```bash
-   gcloud iam workload-identity-pools create "github-pool" \
-     --project="${PROJECT_ID}" \
-     --location="global" \
-     --display-name="GitHub Actions Pool"
-   ```
+**Note:** Service accounts and Workload Identity Federation are now managed by Terraform. The initial setup requires bootstrapping:
 
-2. Create a Workload Identity Provider:
+1. **First-time setup** - Manually create a service account with necessary permissions to run Terraform:
    ```bash
-   gcloud iam workload-identity-pools providers create-oidc "github-provider" \
-     --project="${PROJECT_ID}" \
-     --location="global" \
-     --workload-identity-pool="github-pool" \
-     --display-name="GitHub Provider" \
-     --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository" \
-     --issuer-uri="https://token.actions.githubusercontent.com"
-   ```
+   # Create the service account
+   gcloud iam service-accounts create github-actions-sa \
+     --display-name="GitHub Actions Service Account" \
+     --project="${PROJECT_ID}"
 
-3. Create a service account and grant permissions:
-   ```bash
-   gcloud iam service-accounts create terraform-github \
-     --display-name="Terraform GitHub Actions"
+   # Grant necessary permissions
+   gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+     --member="serviceAccount:github-actions-sa@${PROJECT_ID}.iam.gserviceaccount.com" \
+     --role="roles/editor"
 
    gcloud projects add-iam-policy-binding ${PROJECT_ID} \
-     --member="serviceAccount:terraform-github@${PROJECT_ID}.iam.gserviceaccount.com" \
-     --role="roles/storage.admin"
+     --member="serviceAccount:github-actions-sa@${PROJECT_ID}.iam.gserviceaccount.com" \
+     --role="roles/iam.securityAdmin"
+
+   gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+     --member="serviceAccount:github-actions-sa@${PROJECT_ID}.iam.gserviceaccount.com" \
+     --role="roles/serviceusage.serviceUsageAdmin"
    ```
 
-4. Allow the service account to be impersonated:
-   ```bash
-   gcloud iam service-accounts add-iam-policy-binding \
-     "terraform-github@${PROJECT_ID}.iam.gserviceaccount.com" \
-     --project="${PROJECT_ID}" \
-     --role="roles/iam.workloadIdentityUser" \
-     --member="principalSet://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/github-pool/attribute.repository/${GITHUB_REPO}"
-   ```
+2. **Let Terraform manage everything else** - Once the service account exists with permissions, Terraform will:
+   - Create and manage the Workload Identity Pool
+   - Create and manage the Workload Identity Provider
+   - Set up the binding between GitHub and the service account
+   - Manage all other infrastructure
+
+See `workload_identity.tf` for the Terraform-managed configuration.
 
 ## Bucket Configuration
 

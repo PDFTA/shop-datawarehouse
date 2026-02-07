@@ -13,28 +13,27 @@ resource "google_storage_bucket_iam_member" "cloud_run_bucket_access" {
 # ==============================================================================
 # GitHub Actions Service Account IAM Bindings
 # ==============================================================================
-# These permissions allow GitHub Actions to build and deploy the application
+# These permissions allow GitHub Actions to manage all infrastructure via Terraform
+# IMPORTANT: These are extremely permissive to allow deploying any infrastructure
 
-# Grant GitHub Actions SA write access to Artifact Registry for pushing images
-resource "google_artifact_registry_repository_iam_member" "github_actions_ar_writer" {
-  location   = google_artifact_registry_repository.docker_repo.location
-  project    = var.gcp_project_id
-  repository = google_artifact_registry_repository.docker_repo.name
-  role       = "roles/artifactregistry.writer"
-  member     = "serviceAccount:${google_service_account.github_actions_sa.email}"
-}
-
-# Grant GitHub Actions SA permission to deploy Cloud Run services
-resource "google_project_iam_member" "github_actions_cloud_run_developer" {
+# Grant Editor role - Can create, modify, and delete most GCP resources
+resource "google_project_iam_member" "github_actions_editor" {
   project = var.gcp_project_id
-  role    = "roles/run.developer"
+  role    = "roles/editor"
   member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
 }
 
-# Grant GitHub Actions SA permission to act as service accounts (required for Cloud Run deployment)
-resource "google_project_iam_member" "github_actions_sa_user" {
+# Grant IAM Security Admin - Can manage service accounts, IAM policies, and roles
+resource "google_project_iam_member" "github_actions_iam_admin" {
   project = var.gcp_project_id
-  role    = "roles/iam.serviceAccountUser"
+  role    = "roles/iam.securityAdmin"
+  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
+# Grant Service Usage Admin - Can enable and disable APIs
+resource "google_project_iam_member" "github_actions_service_usage_admin" {
+  project = var.gcp_project_id
+  role    = "roles/serviceusage.serviceUsageAdmin"
   member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
 }
 
