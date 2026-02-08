@@ -48,10 +48,20 @@ resource "google_artifact_registry_repository_iam_member" "github_actions_ar_wri
 }
 
 # ==============================================================================
-# Public Access IAM Bindings
+# Cloud Run Service IAM Bindings
 # ==============================================================================
-# Optional: Allow public access to Cloud Run service
+# These permissions control who can invoke the Cloud Run service
 
+# Grant GitHub Actions SA permission to invoke Cloud Run for testing
+resource "google_cloud_run_v2_service_iam_member" "github_actions_invoker" {
+  name     = google_cloud_run_v2_service.shop_datawarehouse.name
+  location = google_cloud_run_v2_service.shop_datawarehouse.location
+  project  = var.gcp_project_id
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
+# Optional: Allow public access to Cloud Run service (may be blocked by org policy)
 resource "google_cloud_run_v2_service_iam_member" "public_access" {
   count = var.cloud_run_allow_public_access ? 1 : 0
 
