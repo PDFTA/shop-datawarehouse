@@ -129,7 +129,6 @@ jobs:
           terraform apply -auto-approve -input=false \
             -var="cloud_run_image=${{ steps.build_image.outputs.image_tag }}"
             terraform apply -auto-approve -input=false
-          fi
         env:
           TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
           TF_VAR_github_repository: ${{ github.repository }}
