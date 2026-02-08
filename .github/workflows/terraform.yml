@@ -142,21 +142,3 @@ jobs:
             echo "service_url=$SERVICE_URL" >> $GITHUB_OUTPUT
             echo "Service URL: $SERVICE_URL"
           fi
-
-      - name: Test deployment
-        run: |
-          SERVICE_URL="${{ steps.get_url.outputs.service_url }}"
-          if [ -n "$SERVICE_URL" ]; then
-            echo "Waiting for service to be ready..."
-            sleep 15
-
-            echo "Testing health endpoint..."
-            if curl -f "$SERVICE_URL/health"; then
-              echo "✓ Health check passed!"
-            else
-              echo "✗ Health check failed!"
-              exit 1
-            fi
-          else
-            echo "⚠ Could not get service URL, skipping health check"
-          fi

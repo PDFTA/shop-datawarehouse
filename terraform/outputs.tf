@@ -46,16 +46,3 @@ output "artifact_registry_url" {
   description = "Artifact Registry repository URL"
   value       = "${google_artifact_registry_repository.docker_repo.location}-docker.pkg.dev/${var.gcp_project_id}/${google_artifact_registry_repository.docker_repo.repository_id}"
 }
-
-# # Workload Identity outputs
-# output "workload_identity_provider" {
-#   description = "Workload Identity Provider for GitHub Actions"
-#   value       = google_iam_workload_identity_pool_provider.github_actions_provider.name
-# }
-# 
-# output "workload_identity_pool" {
-#   description = "Workload Identity Pool for GitHub Actions"
-#   value       = google_iam_workload_identity_pool.github_actions_pool.name
-# }
-# 
-# 
