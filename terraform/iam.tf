@@ -59,5 +59,5 @@ resource "google_cloud_run_v2_service_iam_member" "public_access" {
   location = google_cloud_run_v2_service.shop_datawarehouse.location
   project  = var.gcp_project_id
   role     = "roles/run.invoker"
-  member   = "allUsers"
+  member   = "allAuthenticatedUsers"
 }

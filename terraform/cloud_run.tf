@@ -4,6 +4,7 @@ resource "google_cloud_run_v2_service" "shop_datawarehouse" {
   location            = var.cloud_run_region
   project             = var.gcp_project_id
   deletion_protection = false
+  ingress             = "INGRESS_TRAFFIC_ALL"
 
   template {
     service_account = google_service_account.cloud_run_sa.email
