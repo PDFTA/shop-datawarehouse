@@ -2,10 +2,6 @@
 
 This directory contains Terraform configuration for managing GCP resources for the shop-datawarehouse project.
 
-## Resources
-
-- **GCS Bucket**: `pfdta-shop-bucket` - Google Cloud Storage bucket for data warehousing
-
 ## Prerequisites
 
 1. [Terraform](https://www.terraform.io/downloads) >= 1.0
@@ -13,9 +9,6 @@ This directory contains Terraform configuration for managing GCP resources for t
 3. GCP Project with billing enabled
 4. Appropriate GCP permissions (Storage Admin or Owner)
 
-## Setup
-
-Local setup is only for development. All terraform configuration changes should occur using the github actions.
 
 ## GitHub Actions
 
@@ -34,7 +27,7 @@ Configure these secrets in your GitHub repository:
 
 ### Service Account Permissions
 
-The `github-actions-sa` service account has extremely permissive permissions to deploy any infrastructure:
+The `github-actions-sa` service account has extremely permissive permissions to deploy any infrastructure. This is intentional for a toy project, but should not be used in production.
 
 - **roles/editor** - Create, modify, and delete most GCP resources
 - **roles/iam.securityAdmin** - Manage service accounts, IAM policies, and roles
@@ -73,21 +66,3 @@ These broad permissions allow Terraform to manage any infrastructure without req
    - Set up the binding between GitHub and the service account
    - Manage all other infrastructure
 
-See `workload_identity.tf` for the Terraform-managed configuration.
-
-## Bucket Configuration
-
-The GCS bucket includes:
-
-- **Uniform bucket-level access**: Simplifies permission management
-- **Versioning**: Keeps history of object versions
-- **Lifecycle policy**: Automatically deletes objects after 90 days
-- **Labels**: Tags for environment and management tracking
-
-## State Management
-
-Currently using local state. For production, consider configuring remote state in GCS:
-
-1. Create a separate bucket for Terraform state
-2. Uncomment the backend configuration in `provider.tf`
-3. Run `terraform init -migrate-state`

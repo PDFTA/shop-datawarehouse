@@ -42,7 +42,7 @@ variable "cloud_run_image" {
 }
 
 variable "cloud_run_allow_public_access" {
-  description = "Allow public access to Cloud Run service"
+  description = "Allow public access to Cloud Run service (may be blocked by org policy)"
   type        = bool
   default     = false
 }

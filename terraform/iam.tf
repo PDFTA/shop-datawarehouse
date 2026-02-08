@@ -37,11 +37,31 @@ resource "google_project_iam_member" "github_actions_service_usage_admin" {
   member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
 }
 
-# ==============================================================================
-# Public Access IAM Bindings
-# ==============================================================================
-# Optional: Allow public access to Cloud Run service
+# Grant Artifact Registry Writer - Push Docker images
+# Note: Editor role does NOT include Artifact Registry permissions, so we need this explicitly
+resource "google_artifact_registry_repository_iam_member" "github_actions_ar_writer" {
+  location   = google_artifact_registry_repository.docker_repo.location
+  project    = var.gcp_project_id
+  repository = google_artifact_registry_repository.docker_repo.name
+  role       = "roles/artifactregistry.writer"
+  member     = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
 
+# ==============================================================================
+# Cloud Run Service IAM Bindings
+# ==============================================================================
+# These permissions control who can invoke the Cloud Run service
+
+# Grant GitHub Actions SA permission to invoke Cloud Run for testing
+resource "google_cloud_run_v2_service_iam_member" "github_actions_invoker" {
+  name     = google_cloud_run_v2_service.shop_datawarehouse.name
+  location = google_cloud_run_v2_service.shop_datawarehouse.location
+  project  = var.gcp_project_id
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
+# Optional: Allow public access to Cloud Run service (may be blocked by org policy)
 resource "google_cloud_run_v2_service_iam_member" "public_access" {
   count = var.cloud_run_allow_public_access ? 1 : 0
 
@@ -49,5 +69,5 @@ resource "google_cloud_run_v2_service_iam_member" "public_access" {
   location = google_cloud_run_v2_service.shop_datawarehouse.location
   project  = var.gcp_project_id
   role     = "roles/run.invoker"
-  member   = "allUsers"
+  member   = "allAuthenticatedUsers"
 }
